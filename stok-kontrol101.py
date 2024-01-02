@@ -42,6 +42,12 @@ class LinkedList:
             return
         prev.next = current.next
 
+    def __iter__(self):
+        current = self.head
+        while current:
+            yield current.data
+            current = current.next
+
 class StokKontrol(Frame):
     def __init__(self):
         Frame.__init__(self)
@@ -62,6 +68,9 @@ class StokKontrol(Frame):
                            command=self.searchInventory)
         self.btn1.grid(row=0, column=3, padx=8, pady=20, sticky=W)
 
+        self.btn2 = Button(self, text='Yenile', command=self.resetList)
+        self.btn2.grid(row=0, column=4, padx=8, pady=20, sticky=W)
+
         self.scroll = Scrollbar(self)
         self.scroll.grid(row=3, column=4)
         self.text = Text(self, width=60, height=10, wrap=WORD,
@@ -69,7 +78,7 @@ class StokKontrol(Frame):
         self.text.grid(row=3, column=0, columnspan=5, padx=20, pady=20)
         self.scroll.config(command=self.text.yview)
 
-        Label(self, text="Mevcudiyette: " + str(self.itemCount)).grid(row=4, column=0, pady=5, sticky=N)
+        Label(self, text="Item Bilgileri:").grid(row=4, column=0, pady=5, sticky=N)
 
         Label(self, text='Item Numarası ').grid(row=6, column=0, padx=6,
                                               pady=6, sticky=W)
@@ -118,6 +127,25 @@ class StokKontrol(Frame):
                          )
         self.text.configure(state="disabled")
         self._input1.focus_set()
+
+    def resetList(self):
+        self.text.configure(state="normal")
+        self.text.delete(1.0, END)
+        self.text.insert(END, 'Item Numarası' + '\t\t' + 'Item Adı'
+                         + '\t\t' + 'Mevcut' + '\t\t' + 'Tutar'
+                         + '\t\t')
+        self.text.insert(END,
+                         '------------------------------------------------------------'
+                         )
+
+        current = self.items_list.head
+        while current:
+            self.text.insert(END, current.data[0] + '\t\t' + current.data[1] + '\t\t'
+                             + current.data[2] + '\t\t' + current.data[3] + '\t\t')
+            current = current.next
+
+        self.text.configure(state="disabled")
+
 
     def addItem(self):
         self.text.configure(state="normal")
@@ -183,39 +211,40 @@ class StokKontrol(Frame):
     def editItem(self):
         self.text.configure(state="normal")
 
-        items_dict = {item[0]: item for item in self.items_list}
-
         searchVal = str(self._box1.get())
 
-        if searchVal in items_dict:
-            item = items_dict[searchVal]
-            self.items_list.remove(item)
+        current = self.items_list.head
+        while current:
+            if current.data[0] == searchVal:
+                iNum = self._box2.get()
+                iName = self._box3.get()
+                oHand = self._box4.get()
+                iPrice = self._box5.get()
 
-        iNum = self._box2.get()
-        iName = self._box3.get()
-        oHand = self._box4.get()
-        iPrice = self._box5.get()
+                if iNum != '' and iName != '' and oHand != '' and iPrice != '':
+                    new_item = (iNum, iName, oHand, iPrice)
+                    current.data = new_item
 
-        if iNum != '' and iName != '' and oHand != '' and iPrice != '':
-            new_item = (iNum, iName, oHand, iPrice)
-            self.items_list.append(new_item)
+                    self.text.delete(1.0, END)
+                    self.text.insert(END, 'Item Numarası' + '\t\t' + 'Item Adı'
+                                     + '\t\t' + 'Mevcut' + '\t\t' + 'Fiyat'
+                                     + '\t\t')
+                    self.text.insert(END,
+                                     '------------------------------------------------------------'
+                                     )
 
-            self.text.delete(1.0, END)
-            self.text.insert(END, 'Item Numarası' + '\t\t' + 'Item Adı'
-                             + '\t\t' + 'Mevcut' + '\t\t' + 'Fiyat'
-                             + '\t\t')
-            self.text.insert(END,
-                             '------------------------------------------------------------'
-                             )
+                    current = self.items_list.head
+                    while current:
+                        self.text.insert(END, current.data[0] + '\t\t' + current.data[1] + '\t\t'
+                                         + current.data[2] + '\t\t' + current.data[3] + '\t\t')
+                        current = current.next
+                else:
+                    self.text.delete(1.0, END)
+                    self.text.insert(END, 'HATA: Bir ya da daha fazla alan boş bırakıldı.')
 
-            current = self.items_list.head
-            while current:
-                self.text.insert(END, current.data[0] + '\t\t' + current.data[1] + '\t\t'
-                                 + current.data[2] + '\t\t' + current.data[3] + '\t\t')
-                current = current.next
-        else:
-            self.text.delete(1.0, END)
-            self.text.insert(END, 'HATA: Bir ya da daha fazla alan boş bırakıldı.')
+                break
+
+            current = current.next
 
         self._box1.set('')
         self._box2.set('')
@@ -229,33 +258,43 @@ class StokKontrol(Frame):
     def deleteItem(self):
         self.text.configure(state="normal")
 
-        items_dict = {item[0]: item for item in self.items_list}
         searchVal = str(self._box1.get())
 
-        if searchVal in items_dict:
-            item = items_dict[searchVal]
-            self.items_list.remove(item)
-
-            self.text.delete(1.0, END)
-            self.text.insert(END, 'Item Numarası' + '\t\t' + 'Item Adı'
-                         + '\t\t' + 'Mevcut' + '\t\t' + 'Fiyat'
-                         + '\t\t')
-        self.text.insert(END,
-                         '------------------------------------------------------------'
-                         )
-
         current = self.items_list.head
+        prev = None
+
         while current:
-            self.text.insert(END, current.data[0] + '\t\t' + current.data[1] + '\t\t'
-                             + current.data[2] + '\t\t' + current.data[3] + '\t\t')
+            if current.data[0] == searchVal:
+                if prev is None:
+                    self.items_list.head = current.next
+                else:
+                    prev.next = current.next
+
+                self.text.delete(1.0, END)
+                self.text.insert(END, 'Item Numarası' + '\t\t' + 'Item Adı'
+                                 + '\t\t' + 'Mevcut' + '\t\t' + 'Fiyat'
+                                 + '\t\t')
+                self.text.insert(END,
+                                 '------------------------------------------------------------'
+                                 )
+
+                current = self.items_list.head
+                while current:
+                    self.text.insert(END, current.data[0] + '\t\t' + current.data[1] + '\t\t'
+                                     + current.data[2] + '\t\t' + current.data[3] + '\t\t')
+                    current = current.next
+
+                break
+
+            prev = current
             current = current.next
+
         else:
             self.text.delete(1.0, END)
             self.text.insert(END, 'Item bulunamadı.')
 
         self._box1.set('')
         self.text.configure(state="disabled")
-
 
 def main():
     StokKontrol().mainloop()
